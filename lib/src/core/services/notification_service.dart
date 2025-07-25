@@ -14,7 +14,7 @@ class NotificationService {
     try {
       if (kDebugMode) print('🔔 Starting notification initialization...');
 
-      // Request permission with timeout
+      // Request permission with shorter timeout
       final settings = await _messaging.requestPermission(
         alert: true,
         announcement: false,
@@ -24,10 +24,10 @@ class NotificationService {
         provisional: false,
         sound: true,
       ).timeout(
-        const Duration(seconds: 3), // Reduced timeout
+        const Duration(seconds: 2), // Further reduced timeout
         onTimeout: () {
           if (kDebugMode) print('⚠️ Permission request timed out');
-          const notificationSettings = NotificationSettings(
+          return const NotificationSettings(
             authorizationStatus: AuthorizationStatus.notDetermined,
             alert: AppleNotificationSetting.notSupported,
             announcement: AppleNotificationSetting.notSupported,
@@ -39,18 +39,17 @@ class NotificationService {
             timeSensitive: AppleNotificationSetting.notSupported,
             criticalAlert: AppleNotificationSetting.notSupported,
             sound: AppleNotificationSetting.notSupported,
-            providesAppNotificationSettings: AppleNotificationSetting.notSupported, // Added required parameter
+            providesAppNotificationSettings: AppleNotificationSetting.notSupported,
           );
-          return notificationSettings;
         },
       );
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
         if (kDebugMode) print('User granted permission');
         
-        // Get token with timeout
+        // Get token with shorter timeout
         String? token = await _messaging.getToken().timeout(
-          const Duration(seconds: 3),
+          const Duration(seconds: 2),
           onTimeout: () {
             if (kDebugMode) print('⚠️ Token request timed out');
             return null;
@@ -61,7 +60,7 @@ class NotificationService {
           print('FCM Token: $token');
         }
 
-        // Set up handlers (non-blocking)
+        // Set up handlers
         _setupMessageHandlers();
         
       } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
@@ -76,32 +75,26 @@ class NotificationService {
     } catch (e, stackTrace) {
       if (kDebugMode) {
         print('❌ Error initializing notifications: $e');
-        print('Stack trace: $stackTrace');
       }
       
-      // Mark as initialized to prevent hanging
+      // Mark as initialized to prevent blocking
       _isInitialized = true;
     }
   }
 
   static void _setupMessageHandlers() {
     try {
-      // Handle background messages
+      // Background messages
       FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-      // Handle foreground messages
+      // Foreground messages
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
         if (kDebugMode) {
           print('Got a message whilst in the foreground!');
-          print('Message data: ${message.data}');
-        }
-
-        if (message.notification != null && kDebugMode) {
-          print('Message also contained a notification: ${message.notification}');
         }
       });
 
-      // Handle notification opened app
+      // App opened from notification
       FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
         if (kDebugMode) {
           print('A new onMessageOpenedApp event was published!');
@@ -117,7 +110,7 @@ class NotificationService {
   static Future<String?> getToken() async {
     try {
       return await _messaging.getToken().timeout(
-        const Duration(seconds: 3),
+        const Duration(seconds: 2),
         onTimeout: () => null,
       );
     } catch (e) {
@@ -129,7 +122,7 @@ class NotificationService {
   static Future<void> subscribeToTopic(String topic) async {
     try {
       await _messaging.subscribeToTopic(topic).timeout(
-        const Duration(seconds: 3),
+        const Duration(seconds: 2),
       );
       if (kDebugMode) print('✅ Subscribed to topic: $topic');
     } catch (e) {
@@ -140,7 +133,7 @@ class NotificationService {
   static Future<void> unsubscribeFromTopic(String topic) async {
     try {
       await _messaging.unsubscribeFromTopic(topic).timeout(
-        const Duration(seconds: 3),
+        const Duration(seconds: 2),
       );
       if (kDebugMode) print('✅ Unsubscribed from topic: $topic');
     } catch (e) {

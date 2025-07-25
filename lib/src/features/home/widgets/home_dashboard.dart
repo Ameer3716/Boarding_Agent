@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:glassmorphism/glassmorphism.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -14,14 +12,13 @@ class HomeDashboard extends ConsumerStatefulWidget {
 }
 
 class _HomeDashboardState extends ConsumerState<HomeDashboard>
-    with TickerProviderStateMixin {
+    with SingleTickerProviderStateMixin {
   final TextEditingController _questionController = TextEditingController();
   final FocusNode _questionFocusNode = FocusNode();
   bool _isQuestionFocused = false;
-  bool _animationsEnabled = true;
   
-  late AnimationController _pointsAnimationController;
-  late Animation<int> _pointsAnimation;
+  AnimationController? _pointsAnimationController;
+  Animation<int>? _pointsAnimation;
 
   @override
   void initState() {
@@ -36,23 +33,23 @@ class _HomeDashboardState extends ConsumerState<HomeDashboard>
       }
     });
 
-    // Reduce animation complexity and duration
+    // Simplified animation
     _pointsAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 800), // Reduced from 1500ms
+      duration: const Duration(milliseconds: 500), // Further reduced
       vsync: this,
     );
 
     _pointsAnimation = IntTween(begin: 0, end: 150).animate(
       CurvedAnimation(
-        parent: _pointsAnimationController,
+        parent: _pointsAnimationController!,
         curve: Curves.easeOut,
       ),
     );
 
-    // Start animation after widget is built
+    // Start animation after a delay
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && _animationsEnabled) {
-        _pointsAnimationController.forward();
+      if (mounted) {
+        _pointsAnimationController?.forward();
       }
     });
 
@@ -63,7 +60,7 @@ class _HomeDashboardState extends ConsumerState<HomeDashboard>
   void dispose() {
     _questionController.dispose();
     _questionFocusNode.dispose();
-    _pointsAnimationController.dispose();
+    _pointsAnimationController?.dispose();
     super.dispose();
   }
 
@@ -100,112 +97,96 @@ class _HomeDashboardState extends ConsumerState<HomeDashboard>
   }
 
   Widget _buildDashboard(user) {
-    return CustomScrollView(
-      // Add physics to improve scrolling performance
-      physics: const BouncingScrollPhysics(),
-      slivers: [
-        // Simplified App Bar (removed complex gradient)
-        SliverAppBar(
-          expandedHeight: 120,
-          floating: false,
-          pinned: true,
-          backgroundColor: const Color(0xFF0A0A0B),
-          elevation: 0,
-          flexibleSpace: FlexibleSpaceBar(
-            background: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Good ${_getGreeting()}',
-                                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                              Text(
-                                user?.displayName ?? 'Agent',
-                                style: Theme.of(context).textTheme.displaySmall,
-                              ),
-                            ],
-                          ),
-                        ),
-                        // Simplified avatar
-                        Container(
-                          width: 48,
-                          height: 48,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: AppColors.primary,
-                          ),
-                          child: const Icon(
-                            Icons.person,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                ),
-              ),
+    return SingleChildScrollView(
+      physics: const ClampingScrollPhysics(), // Better performance
+      child: Column(
+        children: [
+          // Simplified header
+          _buildHeader(user),
+          
+          // Content
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              children: [
+                _buildAskBoardroomSection(),
+                const SizedBox(height: 24),
+                _buildStatsRow(user),
+                const SizedBox(height: 24),
+                _buildRecentActivitySection(),
+                const SizedBox(height: 24),
+                _buildTopContributorsSection(),
+                const SizedBox(height: 100), // Bottom padding
+              ],
             ),
           ),
-        ),
+        ],
+      ),
+    );
+  }
 
-        // Dashboard Content with reduced animations
-        SliverPadding(
-          padding: const EdgeInsets.all(24),
-          sliver: SliverList(
-            delegate: SliverChildListDelegate([
-              // Ask the Boardroom Section - simplified animation
-              _buildAskBoardroomSection(),
-              
-              const SizedBox(height: 24),
-              
-              // Quick Stats Row - simplified animations
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildStatsCard(
-                      'Your Points',
-                      user?.totalPoints ?? 0,
-                      Icons.stars,
-                      AppColors.primary,
-                    ),
+  Widget _buildHeader(user) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(24, 60, 24, 24),
+      decoration: const BoxDecoration(
+        color: Color(0xFF0A0A0B),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Good ${_getGreeting()}',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: AppColors.textSecondary,
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildStatsCard(
-                      'Your Rank',
-                      user?.rank ?? 0,
-                      Icons.leaderboard,
-                      AppColors.secondary,
-                    ),
-                  ),
-                ],
-              ),
-              
-              const SizedBox(height: 24),
-              
-              // Recent Activity Section
-              _buildRecentActivitySection(),
-              
-              const SizedBox(height: 24),
-              
-              // Top Contributors Section
-              _buildTopContributorsSection(),
-              
-              const SizedBox(height: 100), // Bottom padding for nav bar
-            ]),
+                ),
+                Text(
+                  user?.displayName ?? 'Agent',
+                  style: Theme.of(context).textTheme.displaySmall,
+                ),
+              ],
+            ),
+          ),
+          // Simplified avatar
+          Container(
+            width: 48,
+            height: 48,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.primary,
+            ),
+            child: const Icon(
+              Icons.person,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatsRow(user) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildStatsCard(
+            'Your Points',
+            user?.totalPoints ?? 0,
+            Icons.stars,
+            AppColors.primary,
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: _buildStatsCard(
+            'Your Rank',
+            user?.rank ?? 0,
+            Icons.leaderboard,
+            AppColors.secondary,
           ),
         ),
       ],
@@ -243,7 +224,7 @@ class _HomeDashboardState extends ConsumerState<HomeDashboard>
             ),
             const SizedBox(height: 16),
             
-            // Simplified Question Input Field
+            // Simple input field
             Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
@@ -272,7 +253,7 @@ class _HomeDashboardState extends ConsumerState<HomeDashboard>
             
             const SizedBox(height: 12),
             
-            // Character Counter and Button
+            // Simple counter and button
             Row(
               children: [
                 Expanded(
@@ -288,7 +269,7 @@ class _HomeDashboardState extends ConsumerState<HomeDashboard>
                 ElevatedButton(
                   onPressed: _questionController.text.isNotEmpty
                       ? () {
-                          // Handle post question
+                          print("📝 Posting question: ${_questionController.text}");
                         }
                       : null,
                   child: const Text('Ask'),
@@ -298,16 +279,16 @@ class _HomeDashboardState extends ConsumerState<HomeDashboard>
             
             const SizedBox(height: 16),
             
-            // Simplified Tag Suggestions
+            // Simple tags
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: [
+              children: const [
                 'Lead Generation',
                 'Brand Building',
                 'Increasing Fees',
                 'Conversions',
-              ].map((tag) => _buildTagChip(tag)).toList(),
+              ].map(_buildTagChip).toList(),
             ),
           ],
         ),
@@ -315,10 +296,10 @@ class _HomeDashboardState extends ConsumerState<HomeDashboard>
     );
   }
 
-  Widget _buildTagChip(String tag) {
+  static Widget _buildTagChip(String tag) {
     return InkWell(
       onTap: () {
-        // Add tag to question
+        print("🏷️ Tag tapped: $tag");
       },
       borderRadius: BorderRadius.circular(16),
       child: Container(
@@ -330,9 +311,9 @@ class _HomeDashboardState extends ConsumerState<HomeDashboard>
         ),
         child: Text(
           tag,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          style: const TextStyle(
             color: AppColors.primary,
-            fontWeight: FontWeight.w500,
+            fontSize: 12,
           ),
         ),
       ),
@@ -361,18 +342,23 @@ class _HomeDashboardState extends ConsumerState<HomeDashboard>
               size: 24,
             ),
             const SizedBox(height: 8),
-            // Only animate points, not rank
+            // Animate points only
             if (title == 'Your Points')
-              AnimatedBuilder(
-                animation: _pointsAnimation,
+              _pointsAnimation != null ? AnimatedBuilder(
+                animation: _pointsAnimation!,
                 builder: (context, child) {
                   return Text(
-                    _pointsAnimation.value.toString(),
+                    _pointsAnimation!.value.toString(),
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   );
                 },
+              ) : Text(
+                value.toString(),
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               )
             else
               Text(
@@ -425,14 +411,14 @@ class _HomeDashboardState extends ConsumerState<HomeDashboard>
             ),
             const SizedBox(height: 16),
             
-            // Mock activity items (simplified)
+            // Activity items
             ..._buildActivityItems(),
             
             const SizedBox(height: 12),
             Center(
               child: TextButton(
                 onPressed: () {
-                  // Navigate to full activity
+                  print("📋 View all activity tapped");
                 },
                 child: const Text('View All Activity'),
               ),
@@ -444,7 +430,7 @@ class _HomeDashboardState extends ConsumerState<HomeDashboard>
   }
 
   List<Widget> _buildActivityItems() {
-    final activities = [
+    const activities = [
       {
         'type': 'question',
         'title': 'How to improve lead conversion rates?',
@@ -468,11 +454,11 @@ class _HomeDashboardState extends ConsumerState<HomeDashboard>
     return activities.map((activity) => _buildActivityItem(activity)).toList();
   }
 
-  Widget _buildActivityItem(Map<String, String> activity) {
+  Widget _buildActivityItem(Map<String, dynamic> activity) {
     IconData icon;
     Color iconColor;
     
-    switch (activity['type']) {
+    switch (activity['type'] as String) {
       case 'question':
         icon = Icons.help_outline;
         iconColor = AppColors.primary;
@@ -513,7 +499,7 @@ class _HomeDashboardState extends ConsumerState<HomeDashboard>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  activity['title']!,
+                  activity['title'] as String,
                   style: Theme.of(context).textTheme.bodyMedium,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -522,7 +508,7 @@ class _HomeDashboardState extends ConsumerState<HomeDashboard>
                 Row(
                   children: [
                     Text(
-                      activity['time']!,
+                      activity['time'] as String,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -536,7 +522,7 @@ class _HomeDashboardState extends ConsumerState<HomeDashboard>
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      activity['engagement']!,
+                      activity['engagement'] as String,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -582,14 +568,14 @@ class _HomeDashboardState extends ConsumerState<HomeDashboard>
             ),
             const SizedBox(height: 16),
             
-            // Mock contributors
+            // Contributors
             ..._buildTopContributors(),
             
             const SizedBox(height: 12),
             Center(
               child: TextButton(
                 onPressed: () {
-                  // Navigate to leaderboard
+                  print("🏆 View leaderboard tapped");
                 },
                 child: const Text('View Leaderboard'),
               ),
@@ -601,7 +587,7 @@ class _HomeDashboardState extends ConsumerState<HomeDashboard>
   }
 
   List<Widget> _buildTopContributors() {
-    final contributors = [
+    const contributors = [
       {
         'name': 'Sarah Johnson',
         'agency': 'Premium Properties',
@@ -629,7 +615,7 @@ class _HomeDashboardState extends ConsumerState<HomeDashboard>
     Color rankColor;
     IconData rankIcon;
     
-    switch (contributor['rank']) {
+    switch (contributor['rank'] as int) {
       case 1:
         rankColor = AppColors.gold;
         rankIcon = Icons.looks_one;
@@ -670,13 +656,13 @@ class _HomeDashboardState extends ConsumerState<HomeDashboard>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  contributor['name'],
+                  contributor['name'] as String,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 Text(
-                  contributor['agency'],
+                  contributor['agency'] as String,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: AppColors.textSecondary,
                   ),

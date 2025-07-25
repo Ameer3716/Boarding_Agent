@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:glassmorphism/glassmorphism.dart';
 
 import '../../../core/router/route_names.dart';
 import '../../../core/theme/app_colors.dart';
@@ -24,16 +23,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
+  AnimationController? _animationController;
+  Animation<double>? _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
     
+    // Simplified animation
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 300), // Reduced duration
       vsync: this,
     );
     
@@ -41,26 +40,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       begin: 0.0,
       end: 1.0,
     ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+      parent: _animationController!,
+      curve: Curves.easeOut,
     ));
     
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: const Interval(0.2, 1.0, curve: Curves.easeOut),
-    ));
-    
-    _animationController.forward();
+    _animationController?.forward();
   }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _animationController.dispose();
+    _animationController?.dispose();
     super.dispose();
   }
 
@@ -105,14 +96,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             child: SizedBox(
               height: MediaQuery.of(context).size.height - 
                      MediaQuery.of(context).padding.top - 48,
-              child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: SlideTransition(
-                  position: _slideAnimation,
+              child: _fadeAnimation != null ? FadeTransition(
+                opacity: _fadeAnimation!,
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Logo and Title
+                      // Header
                       const Icon(
                         Icons.business_center,
                         size: 80,
@@ -133,24 +122,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       ),
                       const SizedBox(height: 48),
                       
-                      // Login Form
-                      GlassmorphicContainer(
+                      // Form container
+                      Container(
                         width: double.infinity,
-                        height: double.infinity,
-                        borderRadius: 20,
-                        blur: 10,
-                        alignment: Alignment.center,
-                        border: 2,
-                        linearGradient: AppColors.glassGradient,
-                        borderGradient: const LinearGradient(
-                          colors: [
-                            AppColors.glassBorder,
-                            AppColors.glassBorder,
-                          ],
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.1),
+                            width: 1,
+                          ),
                         ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Form(
+                        child: Form(
                             key: _formKey,
                             child: Column(
                               children: [
@@ -213,7 +197,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                 ),
                               ],
                             ),
-                          ),
                         ),
                       ),
                       
@@ -263,8 +246,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       ),
                     ],
                   ),
-                ),
-              ),
+              ) : const Center(child: CircularProgressIndicator()),
             ),
           ),
         ),
@@ -298,8 +280,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Cancel'),
           ),
-          CustomButton(
-            text: 'Send Reset Link',
+          ElevatedButton(
             onPressed: () {
               if (emailController.text.isNotEmpty) {
                 ref.read(authControllerProvider.notifier)
@@ -312,6 +293,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                 );
               }
             },
+            child: const Text('Send Reset Link'),
           ),
         ],
       ),

@@ -16,42 +16,11 @@ void main() async {
   print("🚀 App starting initialization...");
   
   try {
-    // Set system UI overlay style first (non-blocking)
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
-        systemNavigationBarColor: Colors.transparent,
-        systemNavigationBarIconBrightness: Brightness.light,
-      ),
-    );
+    // Set system UI overlay style (non-blocking)
+    _setSystemUIStyle();
     
-    // Lock orientation to portrait (non-blocking)
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
-    
-    print("📱 System UI configured");
-    
-    // Initialize critical services with timeout
-    await Future.wait([
-      _initializeFirebase(),
-      _initializeHive(),
-    ]).timeout(
-      const Duration(seconds: 10),
-      onTimeout: () {
-        print("⚠️ Initialization timeout - continuing with defaults");
-        return [];
-      },
-    );
-    
-    print("✅ Core services initialized");
-    
-    // Initialize Stripe (this should be fast)
-    _initializeStripe();
-    
-    print("💳 Stripe configured");
+    // Initialize critical services in parallel with shorter timeout
+    await _initializeCoreServices();
     
     runApp(
       const ProviderScope(
@@ -59,8 +28,7 @@ void main() async {
       ),
     );
     
-    // Initialize notifications after app starts (non-blocking)
-    _initializeNotificationsAsync();
+    print("✅ App started successfully");
     
   } catch (e, stackTrace) {
     print("❌ Error during initialization: $e");
@@ -75,42 +43,91 @@ void main() async {
   }
 }
 
+void _setSystemUIStyle() {
+  try {
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+    );
+    
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+    
+    print("📱 System UI configured");
+  } catch (e) {
+    print("⚠️ System UI configuration failed: $e");
+  }
+}
+
+Future<void> _initializeCoreServices() async {
+  print("🔧 Starting core services initialization...");
+  
+  // Initialize services in parallel with reduced timeout
+  final results = await Future.wait([
+    _initializeFirebase(),
+    _initializeHive(),
+    _initializeStripe(),
+  ], eagerError: false).timeout(
+    const Duration(seconds: 5), // Reduced timeout
+    onTimeout: () {
+      print("⚠️ Core services timeout - continuing anyway");
+      return [false, false, false];
+    },
+  );
+  
+  print("✅ Core services initialization completed");
+  
+  // Initialize notifications in background after app starts
+  _initializeNotificationsInBackground();
+}
+
 Future<void> _initializeFirebase() async {
   try {
     print("🔥 Initializing Firebase...");
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
-    );
+    ).timeout(const Duration(seconds: 3));
     print("✅ Firebase initialized");
+    return true;
   } catch (e) {
     print("❌ Firebase initialization failed: $e");
-    rethrow;
+    return false;
   }
 }
 
 Future<void> _initializeHive() async {
   try {
     print("📦 Initializing Hive...");
-    await Hive.initFlutter();
+    await Hive.initFlutter().timeout(const Duration(seconds: 2));
     print("✅ Hive initialized");
+    return true;
   } catch (e) {
     print("❌ Hive initialization failed: $e");
-    rethrow;
+    return false;
   }
 }
 
-void _initializeStripe() {
+Future<bool> _initializeStripe() async {
   try {
     print("💳 Initializing Stripe...");
     Stripe.publishableKey = AppConstants.stripePublishableKey;
     print("✅ Stripe initialized");
+    return true;
   } catch (e) {
     print("❌ Stripe initialization failed: $e");
+    return false;
   }
 }
 
-void _initializeNotificationsAsync() {
-  Future.delayed(const Duration(seconds: 1), () async {
+void _initializeNotificationsInBackground() {
+  // Initialize notifications after the app is fully loaded
+  Future.delayed(const Duration(milliseconds: 500), () async {
     try {
       print("🔔 Initializing Notifications...");
       await NotificationService.initialize();

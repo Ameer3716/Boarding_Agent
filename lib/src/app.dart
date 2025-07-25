@@ -11,7 +11,6 @@ class AgentsBoardroomApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     print("🏗️ Building AgentsBoardroomApp");
     
-    // Simplified approach - removed FutureBuilder that might be causing issues
     final router = ref.watch(appRouterProvider);
     
     return MaterialApp.router(
@@ -19,6 +18,8 @@ class AgentsBoardroomApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
       routerConfig: router,
+      // Disable animations for better performance
+      themeAnimationDuration: const Duration(milliseconds: 150),
       builder: (context, child) {
         return MediaQuery(
           data: MediaQuery.of(context).copyWith(
@@ -36,13 +37,15 @@ class AppLoadingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print("🔄 Showing loading screen");
+    
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0B),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Simplified loading without complex animations
+            // Simple icon without animations
             Container(
               width: 60,
               height: 60,
@@ -63,6 +66,14 @@ class AppLoadingScreen extends StatelessWidget {
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Loading...',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.white70,
               ),
             ),
             const SizedBox(height: 40),

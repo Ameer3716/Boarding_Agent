@@ -15,25 +15,32 @@ import '../../features/profile/screens/profile_screen.dart';
 import '../../features/profile/screens/edit_profile_screen.dart';
 import '../../features/leaderboard/screens/leaderboard_screen.dart';
 import '../../features/admin/screens/admin_panel_screen.dart';
+import '../../../app.dart';
 import 'route_names.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
+  print("🧭 Creating router");
   final authState = ref.watch(authStateProvider);
   
   return GoRouter(
     initialLocation: RouteNames.splash,
+    debugLogDiagnostics: false, // Disable debug logs for performance
     redirect: (context, state) {
+      print("🔄 Router redirect check: ${state.matchedLocation}");
+      
       final isLoggedIn = authState.hasValue && authState.value != null;
       final isLoggingIn = state.matchedLocation == RouteNames.login ||
                          state.matchedLocation == RouteNames.signup;
       
       // If not logged in and trying to access protected routes
       if (!isLoggedIn && !isLoggingIn && state.matchedLocation != RouteNames.splash) {
+        print("🔒 Redirecting to login");
         return RouteNames.login;
       }
       
       // If logged in and trying to access auth routes
       if (isLoggedIn && isLoggingIn) {
+        print("🏠 Redirecting to home");
         return RouteNames.home;
       }
       
@@ -43,7 +50,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RouteNames.splash,
         name: 'splash',
-        builder: (context, state) => const SplashScreen(),
+        builder: (context, state) {
+          print("📱 Building splash screen");
+          return const SplashScreen();
+        },
       ),
       GoRoute(
         path: RouteNames.login,
@@ -63,7 +73,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RouteNames.home,
         name: 'home',
-        builder: (context, state) => const MainScreen(),
+        builder: (context, state) {
+          print("🏠 Building main screen");
+          return const MainScreen();
+        },
       ),
       GoRoute(
         path: RouteNames.forum,
@@ -118,6 +131,16 @@ class SplashScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    print("🎬 Building splash screen widget");
+    
+    // Auto-navigate after a short delay to prevent hanging
+    Future.delayed(const Duration(seconds: 2), () {
+      if (context.mounted) {
+        print("⏰ Auto-navigating from splash");
+        context.go(RouteNames.login);
+      }
+    });
+    
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -127,17 +150,17 @@ class SplashScreen extends ConsumerWidget {
             colors: [Color(0xFF0A0E27), Color(0xFF1A1F3A)],
           ),
         ),
-        child: const Center(
+        child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
+              const Icon(
                 Icons.business_center,
                 size: 80,
                 color: Color(0xFF6366F1),
               ),
-              SizedBox(height: 24),
-              Text(
+              const SizedBox(height: 24),
+              const Text(
                 'Agents Boardroom',
                 style: TextStyle(
                   fontSize: 28,
@@ -145,17 +168,18 @@ class SplashScreen extends ConsumerWidget {
                   color: Colors.white,
                 ),
               ),
-              SizedBox(height: 8),
-              Text(
+              const SizedBox(height: 8),
+              const Text(
                 'Premium Estate Agent Community',
                 style: TextStyle(
                   fontSize: 16,
                   color: Color(0xFFB0B7C3),
                 ),
               ),
-              SizedBox(height: 40),
-              CircularProgressIndicator(
+              const SizedBox(height: 40),
+              const CircularProgressIndicator(
                 color: Color(0xFF6366F1),
+                strokeWidth: 2,
               ),
             ],
           ),

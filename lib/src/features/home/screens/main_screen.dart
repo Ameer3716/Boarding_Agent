@@ -17,15 +17,15 @@ class MainScreen extends ConsumerStatefulWidget {
 }
 
 class _MainScreenState extends ConsumerState<MainScreen>
-    with SingleTickerProviderStateMixin { // Changed to single ticker
+    with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
-  late AnimationController _animationController;
+  AnimationController? _animationController;
 
   // Lazy load screens to improve initial performance
   late final List<Widget Function()> _screenBuilders;
   final Map<int, Widget> _cachedScreens = {};
 
-  final List<String> _titles = [
+  static const List<String> _titles = [
     'Boardroom',
     'Forum',
     'Leaderboard',
@@ -33,7 +33,7 @@ class _MainScreenState extends ConsumerState<MainScreen>
     'Profile',
   ];
 
-  final List<IconData> _icons = [
+  static const List<IconData> _icons = [
     Icons.home_outlined,
     Icons.forum_outlined,
     Icons.leaderboard_outlined,
@@ -41,7 +41,7 @@ class _MainScreenState extends ConsumerState<MainScreen>
     Icons.person_outline,
   ];
 
-  final List<IconData> _selectedIcons = [
+  static const List<IconData> _selectedIcons = [
     Icons.home,
     Icons.forum,
     Icons.leaderboard,
@@ -54,9 +54,9 @@ class _MainScreenState extends ConsumerState<MainScreen>
     super.initState();
     print("🖥️ MainScreen initState started");
     
-    // Single animation controller
+    // Simplified animation controller
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 200), // Reduced duration
+      duration: const Duration(milliseconds: 100), // Further reduced
       vsync: this,
     );
 
@@ -71,14 +71,14 @@ class _MainScreenState extends ConsumerState<MainScreen>
 
     // Pre-cache the home screen
     _cachedScreens[0] = _screenBuilders[0]();
-    _animationController.forward();
+    _animationController?.forward();
     
     print("✅ MainScreen initialized");
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    _animationController?.dispose();
     super.dispose();
   }
 
@@ -96,9 +96,9 @@ class _MainScreenState extends ConsumerState<MainScreen>
         _selectedIndex = index;
       });
 
-      // Simple animation reset
-      _animationController.reset();
-      _animationController.forward();
+      // Minimal animation
+      _animationController?.reset();
+      _animationController?.forward();
     }
   }
 
@@ -110,10 +110,12 @@ class _MainScreenState extends ConsumerState<MainScreen>
       extendBody: true,
       body: GradientBackground(
         child: SafeArea(
-          child: FadeTransition(
-            opacity: _animationController,
-            child: _getScreen(_selectedIndex),
-          ),
+          child: _animationController != null
+              ? FadeTransition(
+                  opacity: _animationController!,
+                  child: _getScreen(_selectedIndex),
+                )
+              : _getScreen(_selectedIndex),
         ),
       ),
       bottomNavigationBar: _buildBottomNavigationBar(),
@@ -127,9 +129,9 @@ class _MainScreenState extends ConsumerState<MainScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2), // Reduced opacity
-            blurRadius: 10, // Reduced blur
-            offset: const Offset(0, 5), // Reduced offset
+            color: Colors.black.withOpacity(0.1), // Further reduced
+            blurRadius: 5, // Further reduced
+            offset: const Offset(0, 2), // Further reduced
           ),
         ],
       ),
@@ -137,7 +139,7 @@ class _MainScreenState extends ConsumerState<MainScreen>
         borderRadius: BorderRadius.circular(20),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.3), // Simplified background
+            color: Colors.black.withOpacity(0.2), // Lighter background
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: Colors.white.withOpacity(0.1),
@@ -157,7 +159,7 @@ class _MainScreenState extends ConsumerState<MainScreen>
             items: List.generate(_icons.length, (index) {
               return BottomNavigationBarItem(
                 icon: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150), // Reduced duration
+                  duration: const Duration(milliseconds: 100), // Further reduced
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: index == _selectedIndex

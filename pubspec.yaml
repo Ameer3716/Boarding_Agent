@@ -23,13 +23,9 @@ dependencies:
   firebase_messaging: ^15.2.10  # if you're using messaging
   firebase_analytics: ^11.5.0  # if you're using analytics
   
-  # UI & Animations  
-  flutter_animate: ^4.2.0+1
-  glassmorphism: ^3.0.0
+  # UI & Animations (reduced for performance)
   shimmer: ^3.0.0
   cached_network_image: ^3.3.0
-  flutter_staggered_animations: ^1.1.1
-  lottie: ^3.3.1
   table_calendar: ^3.0.9
   
   # Navigation
